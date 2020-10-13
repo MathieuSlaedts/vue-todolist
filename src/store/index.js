@@ -6,69 +6,62 @@ Vue.use(Vuex);
 
 export default new Vuex.Store({
     state: {
-        peoples: "",
+        todos: [],
     },
     getters: {
-        peoples(state) {
-            return state.peoples;
+        todos(state) {
+            return state.todos;
         },
     },
     mutations: {
-        allPeoples(state, peoples) {
-            console.log(state.peoples);
-            state.peoples = [...peoples];
-        },
-        deletePeople(state, id) {
-            state.peoples.splice(id, 1);
-        },
-        addNewPeople(state, people) {
-            console.log(state.peoples);
-            console.log(people);
-            state.peoples.push(people);
-        },
-        editPerson(state, people) {
-            const datas = people.personDatas;
-            console.log(state.peoples);
-            for (const property in datas) {
-                console.log(`${property}: ${datas[property]}`);
-                state.peoples[people.index][property] = datas[property];
+        allTodos(state, todos) {
+            // Firebase return an object with the ids as a keys of items
+            // We transform this object in an array of objects
+            // Each object has a key id and a key datas
+            state.todos = [];
+            for (const todo in todos) {
+                state.todos.push({ id: todo, datas: todos[todo] });
             }
         },
     },
     actions: {
-        fetchPeoples(context) {
-            Axios.get("http://localhost:9000/api/peoples").then((res) => {
-                context.commit("allPeoples", res.data);
-                //console.log(context.state.peoples);
-            });
-        },
-
-        addNewPeople(context, people) {
-            console.log(people);
-            Axios.post("http://localhost:9000/api/peoples", people).then(() => {
-                context.commit("addNewPeople", people);
-            });
-        },
-
-        deletePeople(context, people) {
-            Axios.delete("http://localhost:9000/api/peoples/" + people.id).then(
-                () => {
-                    //console.log(res.data);
-                    //context.commit("allPeoples", res.data);
-                    context.commit("deletePeople", people.index);
+        allTodos(context) {
+            Axios.get("https://todolist-847d1.firebaseio.com/todos.json").then(
+                (res) => {
+                    context.commit("allTodos", res.data);
                 }
             );
         },
 
-        editPerson(context, people) {
-            context.commit("editPerson", people);
-            Axios.put(
-                "http://localhost:9000/api/peoples/" + people.id,
-                people.personDatas
-            ).then(() => {
-                context.commit("editPerson", people);
-            });
+        AddTodo(context, newTodo) {
+            console.log(newTodo);
+            Axios.post("https://todolist-847d1.firebaseio.com/todos.json", newTodo).then(
+                () => {
+                    // Reload todos from db
+                    // Refactoring: Find a way without refetching all datas 
+                    context.dispatch("allTodos");
+                }
+            );
+        },
+
+        deleteTodo(context, todoId) {
+            Axios.delete("https://todolist-847d1.firebaseio.com/todos/" + todoId + ".json").then(
+                () => {
+                    // Reload todos from db
+                    // Refactoring: Find a way without refetching all datas 
+                    context.dispatch("allTodos");
+                }
+            );
+        },
+
+        editTodo(context, { todoId, newTodoDone }) {
+            Axios.patch("https://todolist-847d1.firebaseio.com/todos/" + todoId + ".json",{"done": newTodoDone}).then(
+                () => {
+                    // Reload todos from db
+                    // Refactoring: Find a way without refetching all datas 
+                    context.dispatch("allTodos");
+                }
+            );
         },
     },
-    modules: {},
 });

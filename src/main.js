@@ -5,6 +5,8 @@ import store from "./store";
 
 import Axios from "axios";
 
+import "bulma";
+
 Vue.prototype.$axios = Axios;
 Vue.config.productionTip = false;
 
